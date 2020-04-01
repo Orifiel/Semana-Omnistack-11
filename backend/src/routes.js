@@ -1,4 +1,5 @@
 const express = require('express')
+const { celebrate, Segments, Joi } = require('celebrate')
 
 const OngControllers = require('./controllers/OngController')
 const IncidentsController = require('./controllers/IncidentsController')
@@ -13,17 +14,41 @@ routes.post('/sessions', SessionController.create)
 routes.get('/ongs', OngControllers.index)
 
 /** insere uma nova ong */ 
-routes.post('/ongs', OngControllers.create)
+/** validando os campos com celebrate */
+routes.post('/ongs', celebrate({
+    [Segments.BODY]: Joi.object().keys({
+        name: Joi.string().required(),
+        email: Joi.string().required().email(),
+        whatsapp: Joi.string().required().min(10).max(11),
+        city: Joi.string().required(),
+        uf: Joi.string().required().length(2),
+    })
+}),OngControllers.create)
 
 /** lista todos os casos de uma Ong */
-routes.get('/profile', ProfileController.index)
+routes.get('/profile', celebrate({
+    [Segments.HEADERS]: Joi.object({ 
+        authorization: Joi.string().required()
+    }).unknown(), 
+}), ProfileController.index)
 
 /** lista as incidentes criadas*/
-routes.get('/incidents', IncidentsController.index)
+routes.get('/incidents', celebrate({
+    [Segments.QUERY]: Joi.object().keys({
+        page: Joi.number(),
+    })
+}),IncidentsController.index)
 
 /** insere um novo incidente */
 routes.post('/incidents', IncidentsController.create)
-routes.delete('/incidents/:id',IncidentsController.delete)
+
+
+
+routes.delete('/incidents/:id', celebrate({
+    [Segments.PARAMS]: Joi.object().keys({
+        id: Joi.number().required(),
+    })
+}), IncidentsController.delete)
 
 
 module.exports = routes
